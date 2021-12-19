@@ -6,8 +6,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
-import java.util.HashMap;
-
 public class RequestHandler extends AbstractVerticle
 {
 
@@ -15,7 +13,7 @@ public class RequestHandler extends AbstractVerticle
   public void start()
   {
     Router router = Router.router(vertx);
-    router.get("/all").handler(this::fetchFlights);
+    router.get("/*").handler((this::fetchFlights));
 
     vertx.createHttpServer().requestHandler(router::accept)
       .listen(9000, ar ->
@@ -34,7 +32,7 @@ public class RequestHandler extends AbstractVerticle
   {
     JsonObject params = getRequestParams(routingContext.request());
 
-    vertx.eventBus().send("getFlights", params, reply ->
+    vertx.eventBus().request("getFlights", params, reply ->
     {
 
       if (!reply.succeeded())
@@ -44,9 +42,8 @@ public class RequestHandler extends AbstractVerticle
         return;
       }
 
-      JsonObject cityByIcao = JsonObject.mapFrom(getIcaoMap((JsonObject) reply.result().body()));
-
-      vertx.eventBus().send("getWeather", cityByIcao, reply2 ->
+      JsonObject cityByIcao = getIcaoMap((JsonObject) reply.result().body());
+      vertx.eventBus().request("getWeather", cityByIcao, reply2 ->
       {
         // add weather to arrival city
         if (reply2.succeeded())
@@ -71,9 +68,15 @@ public class RequestHandler extends AbstractVerticle
               }
             }
           }
-
           routingContext.response().end(((JsonObject) reply.result().body()).encodePrettily());
+          return;
         }
+
+        reply2.cause().printStackTrace();
+        routingContext.response().end(((JsonObject) reply.result().body()).encodePrettily());
+
+
+
       });
 
     });
@@ -100,9 +103,9 @@ public class RequestHandler extends AbstractVerticle
     return object;
   }
 
-  private HashMap<String, String> getIcaoMap(JsonObject result)
+  private JsonObject getIcaoMap(JsonObject result)
   {
-    HashMap<String, String> citiesByIcao = new HashMap();
+    JsonObject citiesByIcao = new JsonObject();
 
     for (Object object : result.getJsonArray("result"))
     {

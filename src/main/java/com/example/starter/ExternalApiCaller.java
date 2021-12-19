@@ -2,6 +2,7 @@ package com.example.starter;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpRequest;
@@ -14,7 +15,7 @@ public class ExternalApiCaller
 {
   public static class Caller
   {
-    public static void call(Handler handler, RequestOptions options, Vertx vertx)
+    public static void call(Promise handler, RequestOptions options, Vertx vertx)
     {
       HttpRequest<Buffer> request = WebClient.create(vertx)
         .get(options.getBaseUrl(), options.getUri());
@@ -25,8 +26,10 @@ public class ExternalApiCaller
           request.addQueryParam(entry.getKey(), entry.getValue());
         }
 
-      request.timeout(options.getTimeout()).send(ar ->
+      request.send(ar ->
       {
+        System.out.println(options.getUri() + " - " + ar.succeeded());
+        System.out.println(ar.result().statusCode());
         if (ar.succeeded() && ar.result().statusCode() == 200)
         {
           handler.handle(Future.succeededFuture(ar.result().bodyAsJsonObject()));
@@ -40,6 +43,7 @@ public class ExternalApiCaller
         }
 
         handler.handle(Future.failedFuture(ar.cause().getMessage()));
+
       });
     }
   }

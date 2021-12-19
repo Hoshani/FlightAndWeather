@@ -1,5 +1,6 @@
 package com.example.starter;
 
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import io.vertx.core.json.JsonObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -13,18 +14,18 @@ public class CityNameFinder
   {
     static JSONParser parser = new JSONParser();
     static Object object;
+    static JsonObject jsonObject;
 
     public static String getCity(String arrivalIcao)
     {
       try
       {
-        if (object == null)
+        if (object == null || jsonObject == null)
         {
           object = parser
             .parse(new FileReader("src/main/conf/icaoToCityMap.json"));
+          jsonObject = new JsonObject(object.toString());
         }
-
-        JsonObject jsonObject = JsonObject.mapFrom(object);
 
         if (jsonObject == null)
           return "";

@@ -41,33 +41,54 @@ public class WeatherService extends AbstractVerticle
 
   private void weatherFetcher(Message<Object> objectMessage)
   {
-    Future<JsonObject> finalFuture = Future.future();
+    Promise<JsonObject> finalPromise = Promise.promise();
 
-    finalFuture.onComplete(ar -> objectMessage.reply(finalFuture.result()));
+    finalPromise.future().onComplete(ar -> objectMessage.reply(finalPromise.future().result()));
 
-    List<Future> futureArrayList = new ArrayList<Future>();
+    List<Promise> promiseArrayList = new ArrayList<Promise>();
+
+    List<Promise> breakerPromiseArrayList = new ArrayList<Promise>();
     JsonObject cityByIcao = (JsonObject) objectMessage.body();
 
     for (Map.Entry<String, Object> icaoCity : cityByIcao)
     {
-      Future<JsonObject> future = Future.future();
-
-      breaker.<JsonObject>execute(ar -> apiCall(ar.future(), icaoCity.getValue().toString()))
-        .setHandler(handler ->
-        {
-          if (handler.succeeded())
-          {
-            future.complete(handler.result());
-            return;
-          }
-
-          WeatherDBService.FromDB.fetch(future, vertx, icaoCity.getValue().toString());
-        });
-      futureArrayList.add(future);
+      Promise<JsonObject> promise = Promise.promise();
+      breakerPromiseArrayList.add(promise);
+      promiseArrayList.add(promise);
     }
 
+    breaker.<JsonObject>execute(ar ->
+    {
+      for (Map.Entry<String, Object> icaoCity : cityByIcao)
+      {
+        for (Promise promise:breakerPromiseArrayList)
+        {
+          apiCall(promise, icaoCity.getValue().toString());
+        }
+      }
 
-    CompositeFuture.join(futureArrayList).setHandler(ar ->
+      List<Future> breakerFutureList = new ArrayList<>();
+      for (Promise promise : breakerPromiseArrayList)
+      {
+        breakerFutureList.add(promise.future());
+      }
+
+      CompositeFuture.join(breakerFutureList).onComplete(res ->
+      {
+        for (Object object : res.result().list())
+        {
+          breakerPromiseArrayList.remove(object);
+        }
+      });
+    });
+
+    List<Future> futureArrayList = new ArrayList<>();
+    for (Promise promise : promiseArrayList)
+    {
+      futureArrayList.add(promise.future());
+    }
+
+    CompositeFuture.join(futureArrayList).onComplete(ar ->
     {
       for (Future future : futureArrayList)
       {
@@ -91,7 +112,6 @@ public class WeatherService extends AbstractVerticle
 
           String cityName = (String) icaoCity.getValue();
 
-
           if (cityName.equals(result.getString("name")))
           {
             icaoCity.setValue(result);
@@ -99,11 +119,11 @@ public class WeatherService extends AbstractVerticle
         }
       }
 
-      finalFuture.complete(cityByIcao);
+      finalPromise.complete(cityByIcao);
     });
   }
 
-  private void apiCall(Future future, String cityName)
+  private void apiCall(Promise future, String cityName)
   {
     ExternalApiCaller.RequestOptions options =
       new ExternalApiCaller

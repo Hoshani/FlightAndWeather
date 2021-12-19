@@ -2,14 +2,11 @@ package com.example.starter;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 
 public class Starter
 {
-  private final static Logger LOGGER = LogManager.getLogger("vertxLog");
 
   public static void main(String[] args)
   {
@@ -25,7 +22,6 @@ public class Starter
   {
     vertx.deployVerticle(className);
 
-    LOGGER.info("verticle : " + className + " was deployed");
   }
 
   private static void deployWithConfig(Vertx vertx,String className,String filePath)
@@ -34,8 +30,6 @@ public class Starter
     DeploymentOptions options = new DeploymentOptions()
       .setConfig(Helper.JsonFileReader.read(config));
     vertx.deployVerticle(className, options);
-
-    LOGGER.info("verticle : " + className + " was deployed");
   }
 
 }

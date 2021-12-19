@@ -1,6 +1,7 @@
 package com.example.starter;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -15,7 +16,7 @@ public class WeatherDBService
   {
     public static JDBCClient client;
 
-    public static void fetch(Future future, Vertx vertx, String city)
+    public static void fetch(Promise future, Vertx vertx, String city)
     {
       if (client == null)
       {
@@ -29,24 +30,31 @@ public class WeatherDBService
           future.fail("failed");
           return;
         }
-        SQLConnection connection = sqlConnection.result();
-        connection.queryWithParams(
-          "SELECT * FROM weather where CityName = ?"
-          , new JsonArray().add("riyadh")
-          , resultSet ->
-          {
-            client.close();
 
-            if (!resultSet.succeeded())
+        try (SQLConnection connection = sqlConnection.result())
+        {
+          connection.queryWithParams(
+            "SELECT * FROM weather where CityName = ?"
+            , new JsonArray().add("riyadh")
+            , resultSet ->
             {
-              future.fail(resultSet.cause());
-              return;
-            }
+              client.close();
 
-            ResultSet rs = resultSet.result();
-            var weatherJson = new JsonObject(rs.getRows().get(0).getString("weatherInfo"));
-            future.complete(weatherJson);
-          });
+              if (!resultSet.succeeded())
+              {
+                future.fail(resultSet.cause());
+                return;
+              }
+
+              ResultSet rs = resultSet.result();
+              var weatherJson = new JsonObject(rs.getRows().get(0).getString("weatherInfo"));
+              future.complete(weatherJson);
+            });
+        }
+        catch (Exception e)
+        {
+          future.fail("connection failed");
+        }
       });
     }
 

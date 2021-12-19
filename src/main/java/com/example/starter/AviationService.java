@@ -21,7 +21,7 @@ public class AviationService extends AbstractVerticle
     uri = "/v1/flights";
     accessKey = config().getString("access-key");
     baseUrl = config().getString("base-url");
-    timeoutLimit = 30000;//config().getLong("timeout");
+    timeoutLimit = config().getLong("timeout");
   }
 
   @Override
@@ -32,39 +32,41 @@ public class AviationService extends AbstractVerticle
 
   private void flightsFetcher(Message<Object> objectMessage)
   {
-    Future<JsonObject> finalFuture = Future.future();
+    Promise<JsonObject> finalFuture = Promise.promise();
 
-    finalFuture.onComplete(ar ->
-    {
-      objectMessage.reply((finalFuture.result()));
-    });
+    finalFuture.future().onComplete(ar ->
+      objectMessage.reply((finalFuture.future().result())));
 
-    Future<JsonObject>
-      firstPageFlights = Future.future(),
-      secondPageFlights = Future.future();
+    Promise<JsonObject> firstPageFlights = Promise.promise();
+    Promise<JsonObject> secondPageFlights = Promise.promise();
 
     JsonObject messageJson = (JsonObject) objectMessage.body();
     apiCall(firstPageFlights, messageJson);
     apiCall(secondPageFlights, messageJson);
 
-    List<Future> futureArrayList = new ArrayList<Future>();
-    futureArrayList.add(firstPageFlights);
-    futureArrayList.add(secondPageFlights);
+    List<Promise> promiseArrayList = new ArrayList<Promise>();
+    promiseArrayList.add(firstPageFlights);
+    promiseArrayList.add(secondPageFlights);
 
-    CompositeFuture.join(futureArrayList).setHandler(ar ->
+    List<Future> futureArrayList = new ArrayList<>();
+    for (Promise promise : promiseArrayList)
     {
+      futureArrayList.add(promise.future());
+    }
 
+    CompositeFuture.join(futureArrayList).onComplete(ar ->
+    {
       JsonObject result = Helper.Response.Join("api", futureArrayList,accessKey);
       finalFuture.complete(result);
     });
   }
 
-  private void apiCall(Handler<AsyncResult<JsonObject>> handler, JsonObject messageJson)
+  private void apiCall(Promise handler, JsonObject messageJson)
   {
     apiCall(handler, messageJson, false);
   }
 
-  private void apiCall(Handler<AsyncResult<JsonObject>> handler, JsonObject messageJson, boolean isSecondFlight)
+  private void apiCall(Promise handler, JsonObject messageJson, boolean isSecondFlight)
   {
     ExternalApiCaller.RequestOptions options =
       new ExternalApiCaller.RequestOptions(baseUrl, uri, timeoutLimit);
