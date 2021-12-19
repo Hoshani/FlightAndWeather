@@ -1,0 +1,6 @@
+{
+  "key" : "your key here",
+  "base-url" : "api.openweathermap.org",
+  "timeout" : 3000,
+  "uri" : "/data/2.5/weather"
+}

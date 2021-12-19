@@ -1,0 +1,6 @@
+{
+  "base-url" : "api.aviationstack.com",
+  "access-key" : "your key here",
+  "timeout" : 3000
+
+}
