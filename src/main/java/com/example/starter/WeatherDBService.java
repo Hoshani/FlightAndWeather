@@ -54,10 +54,10 @@ public class WeatherDBService
     {
       client = JDBCClient.createShared(vertx,
         new JsonObject()
-          .put("user", "dev")
-          .put("password", "12345")
+          .put("user", "some username")
+          .put("password", "some password")
           .put("driver_class", "com.mysql.cj.jdbc.Driver")
-          .put("url", "jdbc:mysql://localhost:3306/weather_local"));
+          .put("url", "jdbc:mysql://db_link/weather_local"));
     }
   }
 }
