@@ -150,7 +150,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
-          <release>16</release>
+          <release>11</release>
         </configuration>
       </plugin>
       <plugin>
