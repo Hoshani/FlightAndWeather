@@ -21,13 +21,18 @@ public class AviationService extends AbstractVerticle
     uri = "/v1/flights";
     accessKey = config().getString("access-key");
     baseUrl = config().getString("base-url");
-    timeoutLimit = config().getLong("timeout");
+    timeoutLimit = 3000;//config().getLong("timeout");
   }
 
   @Override
   public void start()
   {
     vertx.eventBus().consumer("getFlights").handler(this::flightsFetcher);
+  }
+
+  public JsonObject forTestingPurposesOnly(JsonObject jsonObject)
+  {
+    return jsonObject;
   }
 
   private void flightsFetcher(Message<Object> objectMessage)
