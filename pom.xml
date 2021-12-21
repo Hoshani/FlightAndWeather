@@ -42,12 +42,6 @@
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-unit</artifactId>
-      <version>4.2.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
       <artifactId>vertx-jdbc-client</artifactId>
     </dependency>
     <dependency>
@@ -83,7 +77,6 @@
       <version>2.14.1</version>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-junit5</artifactId>
@@ -104,7 +97,7 @@
       <dependency>
           <groupId>org.jetbrains</groupId>
           <artifactId>annotations</artifactId>
-          <version>RELEASE</version>
+          <version>22.0.0</version>
           <scope>compile</scope>
       </dependency>
     <dependency>
@@ -157,6 +150,7 @@
   </dependencies>
 
   <build>
+    <testSourceDirectory>${project.basedir}/src/main/java/com/example/test</testSourceDirectory>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
